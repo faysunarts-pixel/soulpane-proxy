@@ -7,6 +7,7 @@ app.use(cors());
 app.use(express.json());
 
 const EL_KEY = process.env.ELEVENLABS_KEY;
+const CLAUDE_KEY = process.env.ANTHROPIC_API_KEY;
 
 app.post('/tts/:voiceId', async (req, res) => {
   try {
@@ -28,6 +29,27 @@ app.post('/tts/:voiceId', async (req, res) => {
     }
     res.set('Content-Type', 'audio/mpeg');
     response.body.pipe(res);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+}); app.post('/chat', async (req, res) => {
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': CLAUDE_KEY,
+        'anthropic-version': '2023-06-01',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        system: req.body.system,
+        messages: req.body.messages
+      })
+    });
+    const data = await response.json();
+    res.json(data);
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
